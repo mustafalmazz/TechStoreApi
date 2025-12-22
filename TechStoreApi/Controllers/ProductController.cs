@@ -7,7 +7,7 @@ namespace TechStoreApi.Controllers
 {
     [Route("api/[controller]")] 
     [ApiController]
-    public class ProductController : Controller
+    public class ProductController : ControllerBase
     {
         private readonly AppDbContext _context;
         public ProductController(AppDbContext context)
