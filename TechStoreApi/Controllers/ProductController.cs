@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TechStoreApi.Data;
 using TechStoreApi.Models;
+using TechStoreApi.Services.Abstract;
 
 namespace TechStoreApi.Controllers
 {
@@ -9,16 +8,16 @@ namespace TechStoreApi.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public ProductController(AppDbContext context)
+        private readonly IProductService _productService;
+        public ProductController(IProductService productService)
         {
-            _context = context;
+            _productService = productService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _context.Products.Include(p => p.Category).ToListAsync();
+            var list = await _productService.GetAllProductsAsync();
 
             return Ok(list);
 
@@ -26,7 +25,7 @@ namespace TechStoreApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var product = await _context.Products.Include(f => f.Category).FirstOrDefaultAsync(a => a.Id == id);
+            var product = await _productService.GetProductByIdAsync(id);
             if (product == null)
             {
                 return NotFound("Ürün Bulunamadı");
@@ -40,8 +39,7 @@ namespace TechStoreApi.Controllers
             {
                 return BadRequest();
             }
-            await _context.Products.AddAsync(product);
-            await _context.SaveChangesAsync();
+            await _productService.AddProductAsync(product);
             return CreatedAtAction(
                 nameof(GetById),// 1. ADRES: "Bu veriyi nerede görebilirim?" -> GetById metodunda.
                 new { id = product.Id },// 2. PARAMETRE: "O metoda gitmek için hangi ID lazım?" -> Yeni oluşan ID.
@@ -55,35 +53,25 @@ namespace TechStoreApi.Controllers
             {
                 return BadRequest("ID uyuşmazlığı.");
             }
-            var existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var existingProduct = await _productService.GetProductByIdAsync(id);
             if (existingProduct == null)
             {
                 return NotFound();
             }
-            existingProduct.Name = product.Name;
-            existingProduct.Description = product.Description;
-            existingProduct.Price = product.Price;
-            existingProduct.Stock = product.Stock;
-            existingProduct.CategoryId = product.CategoryId;
-
-           await _context.SaveChangesAsync();
+            await _productService.UpdateProductAsync(id, product);
 
             return NoContent();//güncelleme yapanlar için 204 kodu döner.Veri döndürmez.Güncellenen veriyi genelde merak etmezler
         }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("ID Bulunamadı!");
-            }
-            var productToDelete = await _context.Products.FirstOrDefaultAsync(x=>x.Id == id);
+            var productToDelete = await _productService.GetProductByIdAsync(id);
             if (productToDelete == null)
             {
                 return NotFound("Silinecek Ürün Bulunamadı!");
             }
-            _context.Products.Remove(productToDelete);
-           await _context.SaveChangesAsync();
+           await _productService.DeleteProductAsync(id);
             return NoContent();//Bir şeyi sildikten sonra geriye "Tamam sildim" (200 OK) demek yerine, "İşlem tamam, içerik yok" (204 No Content) demek standarttır.
         }
     }

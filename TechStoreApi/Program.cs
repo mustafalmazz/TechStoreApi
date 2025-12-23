@@ -1,5 +1,7 @@
-using Microsoft.EntityFrameworkCore; // <--- BU EKLENECEK
+using Microsoft.EntityFrameworkCore;
 using TechStoreApi.Data;
+using TechStoreApi.Services.Abstract;
+using TechStoreApi.Services.Concrete;
 namespace TechStoreApi
 {
     public class Program
@@ -19,6 +21,8 @@ namespace TechStoreApi
 
             builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
 
             var app = builder.Build();
 

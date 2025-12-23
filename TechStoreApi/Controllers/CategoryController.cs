@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TechStoreApi.Data;
 using TechStoreApi.Models;
+using TechStoreApi.Services.Abstract;
 
 namespace TechStoreApi.Controllers
 {
@@ -9,22 +8,22 @@ namespace TechStoreApi.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public CategoryController(AppDbContext context)
+        private readonly ICategoryService _categoryService;
+        public CategoryController(ICategoryService categoryService)
         {
-            _context = context;
+            _categoryService = categoryService;
         }
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var allCategories = await _context.Categories.Include(a => a.Products).ToListAsync();
+            var allCategories = await _categoryService.GetAllCategories();
 
             return Ok(allCategories);
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var one = await _context.Categories.Include(o => o.Products).FirstOrDefaultAsync(a => a.Id == id);
+            var one = await _categoryService.GetCategoryById(id);
             if (one == null)
             {
                 return NotFound("Kategori Bulunamadı");
@@ -38,8 +37,7 @@ namespace TechStoreApi.Controllers
             {
                 return BadRequest();
             }
-            await _context.Categories.AddAsync(category);
-            await _context.SaveChangesAsync();
+            await _categoryService.AddCategory(category);
             return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
         }
         [HttpPut("{id}")]
@@ -49,26 +47,23 @@ namespace TechStoreApi.Controllers
             {
                 return BadRequest("Id uyuşmadı");
             }
-            var existingCategory = await _context.Categories.FirstOrDefaultAsync(a => a.Id == id);
+            var existingCategory = await _categoryService.GetCategoryById(id);
             if (existingCategory == null)
             {
                 return NotFound();
             }
-            existingCategory.Name = category.Name;
-            await _context.SaveChangesAsync();
-
+            await _categoryService.UpdateCategory(id, category);
             return NoContent();
         }
         [HttpDelete("{id}")]
-        public  async Task<IActionResult> DeleteAsync(int id)
+        public async Task<IActionResult> DeleteAsync(int id)
         {
-            var forDelete = await _context.Categories.FindAsync(id);
+            var forDelete = await _categoryService.GetCategoryById(id);
             if (forDelete == null)
             {
                 return NotFound("Kategori Bulunamadı");
             }
-            _context.Categories.Remove(forDelete);
-            await _context.SaveChangesAsync();
+            await _categoryService.DeleteCategory(id);
             return NoContent();
         }
     
