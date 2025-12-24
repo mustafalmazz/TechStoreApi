@@ -1,4 +1,7 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using TechStoreApi.Data;
 using TechStoreApi.Services.Abstract;
 using TechStoreApi.Services.Concrete;
@@ -24,6 +27,11 @@ namespace TechStoreApi
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddFluentValidationClientsideAdapters();
+
+            builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -44,3 +52,5 @@ namespace TechStoreApi
         }
     }
 }
+
+
